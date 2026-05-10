@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Damage Formula Visualizer</title>
+<title>Damage Formula Comparison</title>
 
 <style>
     body {
@@ -14,7 +14,7 @@
     }
 
     .container {
-        max-width: 700px;
+        max-width: 800px;
         margin: auto;
         background: #2b2b2b;
         padding: 25px;
@@ -45,45 +45,63 @@
     }
 
     input[type=number] {
-        width: 90px;
+        width: 100px;
         padding: 6px;
         border-radius: 6px;
         border: none;
         font-size: 14px;
     }
 
-    .result {
+    .results {
         margin-top: 35px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .result-box {
         padding: 20px;
         background: #151515;
         border-radius: 10px;
-        font-size: 24px;
+    }
+
+    .title {
+        font-size: 22px;
         font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .value {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .multiplier {
+        color: #8fd3ff;
+    }
+
+    .new_multiplier {
+        color: #ff8f8f;
     }
 
     .formula {
-        margin-top: 15px;
+        margin-top: 30px;
         color: #cccccc;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.6;
     }
 
-    .relation {
-        margin-top: 10px;
-        color: #8fd3ff;
-        font-size: 18px;
-    }
 </style>
 </head>
 <body>
 
 <div class="container">
 
-    <h1>Damage Formula Visualizer</h1>
+    <h1>Damage Formula Comparison</h1>
 
     <div class="slider-group">
         <div class="top-row">
-            <label for="atk">ATK</label>
+            <label>ATK</label>
             <input type="number" id="atkInput" min="1" max="5000" value="100">
         </div>
         <input type="range" id="atk" min="1" max="5000" value="100">
@@ -91,7 +109,7 @@
 
     <div class="slider-group">
         <div class="top-row">
-            <label for="trainedAtk">Trained ATK</label>
+            <label>Trained ATK</label>
             <input type="number" id="trainedAtkInput" min="0" max="5000" value="50">
         </div>
         <input type="range" id="trainedAtk" min="0" max="5000" value="50">
@@ -99,28 +117,62 @@
 
     <div class="slider-group">
         <div class="top-row">
-            <label for="def">DEF</label>
+            <label>DEF</label>
             <input type="number" id="defInput" min="1" max="5000" value="100">
         </div>
         <input type="range" id="def" min="1" max="5000" value="100">
     </div>
 
-    <div class="result">
-        Damage: <span id="damage">150.00</span>
+    <div class="results">
 
-        <div class="relation">
-            Relation Multiplier: <span id="relation">1.00</span>
+        <div class="result-box">
+            <div class="title">Current Formula</div>
+
+            <div class="value">
+                Damage: <span id="damage">150.00</span>
+            </div>
+
+            <div class="value multiplier">
+                Multiplier: <span id="relation">1.0000</span>
+            </div>
         </div>
+
+        <div class="result-box">
+            <div class="title">New DEF Formula</div>
+
+            <div class="value">
+                New Damage: <span id="newDamage">150.00</span>
+            </div>
+
+            <div class="value new_multiplier">
+                New Multiplier: <span id="newRelation">1.0000</span>
+            </div>
+        </div>
+
     </div>
 
     <div class="formula">
+
+        <strong>Current Formula</strong><br>
+
         If ATK ≤ DEF:<br>
-        Relation = ATK / DEF
-        <br><br>
+        Relation = ATK / DEF<br><br>
+
+        If ATK > DEF:<br>
+        Relation = √(ATK / DEF)<br><br>
+
+        Damage = (ATK + TrainedATK) × Relation
+
+        <br><br><hr><br>
+
+        <strong>Steeper DEF Formula</strong><br>
+
+        If ATK ≤ DEF:<br>
+        Relation = (ATK / DEF)²<br><br>
+
         If ATK > DEF:<br>
         Relation = √(ATK / DEF)
-        <br><br>
-        Damage = (ATK + TrainedATK) × Relation
+
     </div>
 
 </div>
@@ -134,9 +186,6 @@
     const atkInput = document.getElementById('atkInput');
     const trainedAtkInput = document.getElementById('trainedAtkInput');
     const defInput = document.getElementById('defInput');
-
-    const damageText = document.getElementById('damage');
-    const relationText = document.getElementById('relation');
 
     function sync(slider, input) {
         slider.value = input.value;
@@ -152,18 +201,37 @@
         const trainedAtk = parseFloat(trainedAtkSlider.value);
         const defValue = parseFloat(defSlider.value);
 
+        const totalAtk = atk + trainedAtk;
+
+        // CURRENT FORMULA
         let relation = atk / defValue;
 
         if (relation >= 1) {
             relation = Math.sqrt(relation);
         }
 
-        const damage = (atk + trainedAtk) * relation;
+        const damage = totalAtk * relation;
 
-        damageText.textContent = damage.toFixed(2);
-        relationText.textContent = relation.toFixed(4);
+        // NEW FORMULA
+        let newRelation = atk / defValue;
+
+        if (newRelation >= 1) {
+            newRelation = Math.sqrt(newRelation);
+        } else {
+            newRelation = Math.pow(newRelation, 2);
+        }
+
+        const newDamage = totalAtk * newRelation;
+
+        // UPDATE UI
+        document.getElementById('damage').textContent = damage.toFixed(2);
+        document.getElementById('relation').textContent = relation.toFixed(4);
+
+        document.getElementById('newDamage').textContent = newDamage.toFixed(2);
+        document.getElementById('newRelation').textContent = newRelation.toFixed(4);
     }
 
+    // SLIDER EVENTS
     atkSlider.addEventListener('input', () => {
         syncReverse(atkSlider, atkInput);
         updateDamage();
@@ -179,6 +247,7 @@
         updateDamage();
     });
 
+    // INPUT EVENTS
     atkInput.addEventListener('input', () => {
         sync(atkSlider, atkInput);
         updateDamage();
